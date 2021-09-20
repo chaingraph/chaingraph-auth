@@ -1,46 +1,38 @@
 const express = require('express')
-require('dotenv').config()
-import { getHasuraSDK } from '@chaingraph.io/hasura-client'
 import { log } from './logger'
-const bodyParser = require('body-parser')
 import { URL } from 'url'
+import { db } from './db'
 import { config } from './config'
 
-const hasura = getHasuraSDK({
-  url: config.hasura_api,
-  adminSecret: config.hasura_admin_secret,
-})
+const bodyParser = require('body-parser')
 
 const app = express()
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 app.post('/', async (req: any, res: any) => {
-  // log.info('body', req.body)
-  // log.info('headers', req.headers)
-  let user
   const apiKey: string = req.body.headers['x-chaingraph-api-key'] || ''
+  if (!apiKey) throw new Error('Invalid API key')
 
-  // skip validations if using codegen key
-  if (apiKey !== config.chaingraph_codegen_key) {
-    log.info(`running api key validation for non codegen api key = ${apiKey}`)
+  log.info(`running api key validation api key = "${apiKey}"`)
 
-    // find user for this key. keys are unique
-    const result = await hasura.query.get_api_user_by_key({ api_key: apiKey.toString() })
-    if (result?.data?.api_users.length === 0) return res.sendStatus(404).end()
-    user = result?.data?.api_users[0]
+  // find user for this key. keys are unique
+  const result = await db.query(`SELECT * FROM api_users WHERE api_key = '${apiKey}'`)
 
-    // validate it is valid hostname
-    const hostname = new URL(req.body.headers.Origin || req.body.headers.origin).hostname
-    if (!user?.domain_names?.split(',').includes(hostname)) return res.sendStatus(404).end()
-  }
+  if (result.length === 0) return res.sendStatus(404).end()
+  const user = result[0]
 
+  // validate it is valid hostname for this key
+  const hostname = new URL(req.body.headers.Origin || req.body.headers.origin).hostname
+  if (!user?.domain_names?.split(',').includes(hostname)) return res.sendStatus(404).end()
+
+  // https://hasura.io/docs/latest/graphql/core/auth/authorization/index.html
   return res.send({
-    'X-Hasura-User-Id': user ? user.id.toString() : 'codegen',
+    'X-Hasura-User-Id': user.id.toString(),
     'X-Hasura-Role': 'api_user',
     'X-Hasura-Is-Owner': 'true',
     'Cache-Control': 'max-age=600',
   })
 })
 
-app.listen(3000, '0.0.0.0', () => log.info('Server running at http://0.0.0.0:3000/'))
+app.listen(config.port, '0.0.0.0', () => log.info(`Server running at http://0.0.0.0:${config.port}/`))

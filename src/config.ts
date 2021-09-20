@@ -1,13 +1,11 @@
 import * as env from 'env-var'
 
 export interface Config {
-  hasura_api: string
-  hasura_admin_secret: string
-  chaingraph_codegen_key: string
+  database_url: string
+  port: number
 }
 
 export const config: Config = {
-  hasura_api: env.get('HASURA_API').required().asString(),
-  hasura_admin_secret: env.get('HASURA_GRAPHQL_ADMIN_SECRET').required().asString(),
-  chaingraph_codegen_key: env.get('CHAINGRAPH_CODEGEN_KEY').required().asString(),
+  database_url: env.get('DATABASE_URL').required().asString(),
+  port: env.get('PORT').required().asIntPositive(),
 }

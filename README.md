@@ -1,6 +1,4 @@
-# Blockmatic NodeJS Template
-
-NodeJS Starter Template
+# ChainGraph Authentication Service
 
 ## Yarn
 
@@ -20,10 +18,10 @@ yarn dev
 
 ```
 # Build the image
-docker build -t image_name .
+docker build -t chaingraph_auth .
 
 # Start a container
-docker run -p 3000:3000 -d image_name
+docker run -p 3000:3000 -d chaingraph_auth
 
 # Get container ID
 docker ps
