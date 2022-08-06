@@ -12,6 +12,7 @@ app.use(bodyParser.json())
 
 app.post('/', async (req: any, res: any) => {
   const apiKey: string = req.body.headers['x-chaingraph-api-key'] || ''
+  console.log(`/auth hook called with ${apiKey}`)
   if (!apiKey) throw new Error('Invalid API key')
 
   log.info(`running api key validation api key = "${apiKey}"`)
