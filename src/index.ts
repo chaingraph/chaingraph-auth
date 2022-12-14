@@ -11,29 +11,42 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 app.post('/', async (req: any, res: any) => {
-  const apiKey: string = req.body.headers['x-chaingraph-api-key'] || ''
-  console.log(`/auth hook called with ${apiKey}`)
-  if (!apiKey) throw new Error('Invalid API key')
+  try {
+    console.log({ headers: req.headers })
+    const apiKey: string = req.headers['x-chaingraph-api-key'] || ''
+    console.log(`/auth hook called with ${apiKey}`)
+    if (!apiKey) throw new Error('Invalid API key')
 
-  log.info(`running api key validation api key = "${apiKey}"`)
+    log.info(`running api key validation api key = "${apiKey}"`)
 
-  // find user for this key. keys are unique
-  const result = await db.query(`SELECT * FROM api_users WHERE api_key = '${apiKey}'`)
+    // find user for this key. keys are unique
+    const result = await db.query(`SELECT * FROM api_users WHERE api_key = '${apiKey}'`)
 
-  if (result.length === 0) return res.sendStatus(404).end()
-  const user = result[0]
+    // Use 401
+    // https://hasura.io/docs/latest/auth/authentication/webhook/
+    if (result.length === 0) return res.sendStatus(401).end()
+    const user = result[0]
 
-  // validate it is valid hostname for this key
-  const hostname = new URL(req.body.headers.Origin || req.body.headers.origin).hostname
-  if (!user?.domain_names?.split(',').includes(hostname)) return res.sendStatus(404).end()
+    // validate it is valid hostname for this key
 
-  // https://hasura.io/docs/latest/graphql/core/auth/authorization/index.html
-  return res.send({
-    'X-Hasura-User-Id': user.id.toString(),
-    'X-Hasura-Role': 'api_user',
-    'X-Hasura-Is-Owner': 'true',
-    'Cache-Control': 'max-age=600',
-  })
+    const hostname = new URL(req.headers.Origin || req.headers.origin).hostname
+    if (!user?.domain_names?.split(',').includes(hostname)) return res.sendStatus(401).end()
+
+    // https://hasura.io/docs/latest/graphql/core/auth/authorization/index.html
+    return res.send({
+      'X-Hasura-User-Id': user.id.toString(),
+      'X-Hasura-Role': 'api_user',
+      'X-Hasura-Is-Owner': 'true',
+      'Cache-Control': 'max-age=600',
+    })
+  } catch (error) {
+    console.error('@@@error@@@', error)
+    return res.sendStatus(401).end()
+  }
+})
+
+app.get('/', async (req: any, res: any) => {
+  return res.send({ status: 'ok' })
 })
 
 app.listen(config.port, '0.0.0.0', () => log.info(`Server running at http://0.0.0.0:${config.port}/`))
