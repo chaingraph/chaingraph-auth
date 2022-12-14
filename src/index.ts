@@ -12,8 +12,10 @@ app.use(bodyParser.json())
 
 app.post('/', async (req: any, res: any) => {
   try {
-    console.log({ headers: req.headers })
-    const apiKey: string = req.headers['x-chaingraph-api-key'] || ''
+    // If you configure your webhook to use POST, then Hasura will send all client headers in payload.
+    const headers = req.body.headers || []
+    console.log({ headers })
+    const apiKey: string = headers['x-chaingraph-api-key'] || ''
     console.log(`/auth hook called with ${apiKey}`)
     if (!apiKey) throw new Error('Invalid API key')
 
@@ -29,7 +31,7 @@ app.post('/', async (req: any, res: any) => {
 
     // validate it is valid hostname for this key
 
-    const hostname = new URL(req.headers.Origin || req.headers.origin).hostname
+    const hostname = new URL(headers.Origin || headers.origin).hostname
     if (!user?.domain_names?.split(',').includes(hostname)) return res.sendStatus(401).end()
 
     // https://hasura.io/docs/latest/graphql/core/auth/authorization/index.html
