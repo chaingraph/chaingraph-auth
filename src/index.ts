@@ -30,7 +30,7 @@ app.post('/', async (req: any, res: any) => {
     const user = result[0]
 
     // validate it is valid hostname for this key
-
+    console.log('============> debugging headers', { headers })
     const hostname = new URL(headers.Origin || headers.origin).hostname
     console.log({ hostname })
     if (!user?.domain_names?.split(',').includes(hostname)) return res.sendStatus(401).end()
