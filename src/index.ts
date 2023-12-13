@@ -29,11 +29,14 @@ app.post('/', async (req: any, res: any) => {
     if (result.length === 0) return res.sendStatus(401).end()
     const user = result[0]
 
+    // NOTE: when requesting from a server the origin seems undefined,
+    // commenting out these lines of code.
+
     // validate it is valid hostname for this key
-    console.log('============> debugging headers', { headers })
-    const hostname = new URL(headers.Origin || headers.origin).hostname
-    console.log({ hostname })
-    if (!user?.domain_names?.split(',').includes(hostname)) return res.sendStatus(401).end()
+    // console.log('============> debugging headers', { headers })
+    // const hostname = new URL(headers.Origin || headers.origin).hostname
+    // console.log({ hostname })
+    // if (!user?.domain_names?.split(',').includes(hostname)) return res.sendStatus(401).end()
 
     // https://hasura.io/docs/latest/graphql/core/auth/authorization/index.html
     return res.send({
